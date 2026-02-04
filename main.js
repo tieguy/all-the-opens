@@ -319,10 +319,22 @@ function render() {
   // Render nodes
   const nodeGroups = g.selectAll('.node')
     .data(nodes, d => d.id)
-    .join('g')
-    .attr('class', 'node')
-    .style('cursor', 'pointer')
-    .call(drag(simulation));
+    .join(
+      enter => enter.append('g')
+        .attr('class', 'node')
+        .style('cursor', 'pointer')
+        .style('opacity', 0)
+        .call(drag(simulation))
+        .on('click', expandNode)
+        .call(enter => enter.transition()
+          .duration(300)
+          .style('opacity', 1)),
+      update => update,
+      exit => exit.transition()
+        .duration(300)
+        .style('opacity', 0)
+        .remove()
+    );
 
   // Add circles to new nodes with source-specific colors
   nodeGroups.selectAll('circle.node-circle')
