@@ -352,7 +352,7 @@ function render() {
     .data(d => [d])
     .join(
       enter => enter.append('circle')
-        .attr('class', 'node-circle')
+        .attr('class', d => `node-circle ${expandedNodes.has(d.id) ? 'expanded' : 'expandable'}`)
         .attr('r', 0)
         .attr('fill', d => getSourceColor(d.source))
         .attr('stroke', '#fff')
@@ -363,6 +363,7 @@ function render() {
           .ease(d3.easeCubicOut)
           .attr('r', 24)),
       update => update
+        .attr('class', d => `node-circle ${expandedNodes.has(d.id) ? 'expanded' : 'expandable'}`)
         .attr('r', 24)
         .attr('fill', d => getSourceColor(d.source)),
       exit => exit.remove()
@@ -380,6 +381,40 @@ function render() {
     .attr('font-weight', 'bold')
     .attr('pointer-events', 'none')
     .text(d => getSourceIcon(d.source));
+
+  // Add expand indicator for non-expanded nodes with connections
+  nodeGroups.selectAll('circle.expand-indicator')
+    .data(d => expandedNodes.has(d.id) ? [] : [d])
+    .join(
+      enter => enter.append('circle')
+        .attr('class', 'expand-indicator')
+        .attr('cx', 18)
+        .attr('cy', -18)
+        .attr('r', 8)
+        .attr('fill', '#238636')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 1),
+      update => update,
+      exit => exit.remove()
+    );
+
+  nodeGroups.selectAll('text.expand-plus')
+    .data(d => expandedNodes.has(d.id) ? [] : [d])
+    .join(
+      enter => enter.append('text')
+        .attr('class', 'expand-plus')
+        .attr('x', 18)
+        .attr('y', -18)
+        .attr('text-anchor', 'middle')
+        .attr('dy', '0.35em')
+        .attr('fill', '#fff')
+        .attr('font-size', '12px')
+        .attr('font-weight', 'bold')
+        .attr('pointer-events', 'none')
+        .text('+'),
+      update => update,
+      exit => exit.remove()
+    );
 
   // Add title text to new nodes
   nodeGroups.selectAll('text.node-title')
