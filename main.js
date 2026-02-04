@@ -147,20 +147,36 @@ function render() {
     .style('cursor', 'pointer')
     .call(drag(simulation));
 
-  // Add circles to new nodes
-  nodeGroups.selectAll('circle')
+  // Add circles to new nodes with source-specific colors
+  nodeGroups.selectAll('circle.node-circle')
     .data(d => [d])
     .join('circle')
-    .attr('r', 20)
-    .attr('fill', '#238636')
-    .attr('stroke', '#3fb950')
-    .attr('stroke-width', 2);
+    .attr('class', 'node-circle')
+    .attr('r', 24)
+    .attr('fill', d => getSourceColor(d.source))
+    .attr('stroke', '#fff')
+    .attr('stroke-width', 2)
+    .attr('opacity', 0.9);
 
-  // Add title text to new nodes
-  nodeGroups.selectAll('text')
+  // Add source badge
+  nodeGroups.selectAll('text.source-badge')
     .data(d => [d])
     .join('text')
-    .attr('dy', 35)
+    .attr('class', 'source-badge')
+    .attr('text-anchor', 'middle')
+    .attr('dy', '0.35em')
+    .attr('fill', '#fff')
+    .attr('font-size', '14px')
+    .attr('font-weight', 'bold')
+    .attr('pointer-events', 'none')
+    .text(d => getSourceIcon(d.source));
+
+  // Add title text to new nodes
+  nodeGroups.selectAll('text.node-title')
+    .data(d => [d])
+    .join('text')
+    .attr('class', 'node-title')
+    .attr('dy', 40)
     .attr('text-anchor', 'middle')
     .attr('fill', '#c9d1d9')
     .attr('font-size', '12px')
