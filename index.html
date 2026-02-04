@@ -20,6 +20,20 @@
       <button id="zoom-reset" title="Reset View">⟲</button>
     </div>
     <svg id="graph"></svg>
+    <div id="legend" class="legend collapsed">
+      <button id="legend-toggle" class="legend-toggle">
+        <span class="legend-toggle-icon">◀</span>
+        <span class="legend-toggle-text">Sources</span>
+      </button>
+      <div class="legend-content">
+        <h3>Sources in Graph</h3>
+        <div id="legend-sources" class="legend-sources"></div>
+        <div class="legend-total">
+          <span id="legend-node-count">0</span> items from
+          <span id="legend-source-count">0</span> sources
+        </div>
+      </div>
+    </div>
     <footer>
       <p>Imagining a unified library. Data from Internet Archive, Wikipedia, DPLA, OpenLibrary, arXiv, Smithsonian, Met Museum.</p>
     </footer>
