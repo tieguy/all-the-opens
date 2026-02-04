@@ -1,5 +1,61 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 
+// Source configuration with colors and icons
+const SOURCES = {
+  internet_archive: {
+    color: '#428bca',
+    name: 'Internet Archive',
+    icon: '🏛️'
+  },
+  wikipedia: {
+    color: '#636466',
+    name: 'Wikipedia',
+    icon: 'W'
+  },
+  wikimedia_commons: {
+    color: '#006699',
+    name: 'Wikimedia Commons',
+    icon: '🖼️'
+  },
+  dpla: {
+    color: '#0066cc',
+    name: 'DPLA',
+    icon: '📚'
+  },
+  openlibrary: {
+    color: '#e47911',
+    name: 'OpenLibrary',
+    icon: '📖'
+  },
+  arxiv: {
+    color: '#b31b1b',
+    name: 'arXiv',
+    icon: '📄'
+  },
+  met_museum: {
+    color: '#e4002b',
+    name: 'Met Museum',
+    icon: '🏺'
+  },
+  smithsonian: {
+    color: '#5b9bd5',
+    name: 'Smithsonian',
+    icon: '🦋'
+  }
+};
+
+function getSourceColor(source) {
+  return SOURCES[source]?.color || '#238636';
+}
+
+function getSourceIcon(source) {
+  return SOURCES[source]?.icon || '?';
+}
+
+function getSourceName(source) {
+  return SOURCES[source]?.name || source;
+}
+
 // Graph state
 let nodes = [];
 let links = [];
