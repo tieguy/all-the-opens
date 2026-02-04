@@ -337,6 +337,14 @@ function render() {
         .style('opacity', 0)
         .call(drag(simulation))
         .on('click', expandNode)
+        .on('dblclick', (event, d) => {
+          event.stopPropagation();
+          // Unpin the node
+          d.fx = null;
+          d.fy = null;
+          d3.select(event.currentTarget).classed('pinned', false);
+          simulation.alpha(0.3).restart();
+        })
         .call(enter => enter.transition()
           .duration(300)
           .style('opacity', 1)),
@@ -434,7 +442,10 @@ function render() {
 }
 
 function drag(simulation) {
+  let dragStartTime = 0;
+
   function dragstarted(event, d) {
+    dragStartTime = Date.now();
     if (!event.active) simulation.alphaTarget(0.3).restart();
     d.fx = d.x;
     d.fy = d.y;
@@ -447,8 +458,19 @@ function drag(simulation) {
 
   function dragended(event, d) {
     if (!event.active) simulation.alphaTarget(0);
-    d.fx = null;
-    d.fy = null;
+
+    const dragDuration = Date.now() - dragStartTime;
+    const nodeElement = d3.select(event.sourceEvent.target.closest('.node'));
+
+    if (dragDuration < 150) {
+      // Short drag = click, unpin
+      d.fx = null;
+      d.fy = null;
+      nodeElement.classed('pinned', false);
+    } else {
+      // Long drag = pin node
+      nodeElement.classed('pinned', true);
+    }
   }
 
   return d3.drag()

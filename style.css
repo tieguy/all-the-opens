@@ -105,3 +105,9 @@ footer {
 .node:hover .expanded {
   filter: brightness(1.1);
 }
+
+/* Pinned node indicator */
+.node.pinned .node-circle {
+  stroke: #f0883e;
+  stroke-width: 3;
+}
