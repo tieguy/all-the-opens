@@ -564,14 +564,14 @@ body {
     top: auto;
     transform: translateY(100%);
     width: 100%;
-    max-height: 50vh;
+    max-height: 35vh;
     overflow-y: auto;
     border-radius: 16px 16px 0 0;
     border: none;
     border-top: 1px solid var(--border-color);
     box-shadow: 0 -4px 16px var(--shadow-color);
     transition: transform 0.3s ease;
-    padding: 16px;
+    padding: 12px 16px;
   }
 
   .sidebar.active {
@@ -586,19 +586,42 @@ body {
     height: 4px;
     background: var(--border-color);
     border-radius: 2px;
-    margin: 0 auto 12px;
+    margin: 0 auto 8px;
   }
 
   .sidebar-empty {
-    padding: 12px 0;
+    padding: 8px 0;
   }
 
   .sidebar-title {
-    font-size: 16px;
+    font-size: 15px;
+    margin-bottom: 6px;
   }
 
   .sidebar-description {
-    font-size: 13px;
+    font-size: 12px;
+    margin-bottom: 8px;
+    /* Limit description to 2 lines on mobile */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .sidebar-source {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .sidebar-link {
+    font-size: 11px;
+  }
+
+  /* Hide detailed sections on mobile to keep it compact */
+  .sidebar-section,
+  .sidebar-potential,
+  .sidebar-status {
+    display: none;
   }
 
   /* Zoom controls - move to bottom left, above sidebar */
@@ -622,24 +645,31 @@ body {
 /* Small phones */
 @media (max-width: 480px) {
   .left-panel {
-    padding: 10px 12px;
+    padding: 8px 12px;
   }
 
   .left-panel-header h1 {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  .left-panel-subtitle {
+    display: none;
   }
 
   .sidebar {
-    max-height: 60vh;
-    padding: 12px;
+    max-height: 40vh;
+    padding: 10px 12px;
   }
 
   .sidebar-title {
-    font-size: 15px;
+    font-size: 14px;
   }
 
-  .sidebar-section {
-    margin: 12px 0;
-    padding-top: 10px;
+  #controls {
+    top: 50px;
+  }
+
+  #graph {
+    margin-top: 45px;
   }
 }
