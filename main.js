@@ -286,6 +286,43 @@ function updateSidebar(d) {
     curationSection.classList.add('hidden');
   }
 
+  // Update mobile summary badges
+  const mobileSummary = document.getElementById('sidebar-mobile-summary');
+  const mobileIdentifiers = document.getElementById('mobile-identifiers');
+  const mobileVerified = document.getElementById('mobile-verified');
+  const mobileCuration = document.getElementById('mobile-curation');
+
+  const identifierCount = d.identifiers ? Object.keys(d.identifiers).length : 0;
+  const verifiedCount = d.relatedContent?.verified?.length || 0;
+  const curationCount = d.relatedContent?.needsCuration?.length || 0;
+
+  if (identifierCount > 0 || verifiedCount > 0 || curationCount > 0) {
+    mobileSummary.classList.remove('hidden');
+
+    if (identifierCount > 0) {
+      mobileIdentifiers.textContent = `🔗 ${identifierCount}`;
+      mobileIdentifiers.classList.remove('hidden');
+    } else {
+      mobileIdentifiers.classList.add('hidden');
+    }
+
+    if (verifiedCount > 0) {
+      mobileVerified.textContent = `✓ ${verifiedCount}`;
+      mobileVerified.classList.remove('hidden');
+    } else {
+      mobileVerified.classList.add('hidden');
+    }
+
+    if (curationCount > 0) {
+      mobileCuration.textContent = `⚠ ${curationCount} need${curationCount > 1 ? '' : 's'} curation`;
+      mobileCuration.classList.remove('hidden');
+    } else {
+      mobileCuration.classList.add('hidden');
+    }
+  } else {
+    mobileSummary.classList.add('hidden');
+  }
+
   sidebar.querySelector('.sidebar-status').textContent = expanded
     ? 'Connections explored'
     : d.potential && d.potential.total > 0
