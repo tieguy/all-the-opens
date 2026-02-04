@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rabbit Hole Browser - Internet Library Consortium Demo</title>
+  <title>Knowledge Commons Consortium Browser - Internet Library Consortium Demo</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app">
     <header>
-      <h1>Rabbit Hole Browser</h1>
+      <h1>Knowledge Commons Consortium Browser</h1>
       <p class="subtitle">Exploring the Internet Library Consortium</p>
     </header>
     <div id="sidebar" class="sidebar">
@@ -20,6 +20,28 @@
         <div class="sidebar-title"></div>
         <div class="sidebar-description"></div>
         <div class="sidebar-source"></div>
+
+        <div id="sidebar-identifiers" class="sidebar-section hidden">
+          <div class="sidebar-section-header">
+            <span class="section-icon">🔗</span> Authority Identifiers
+          </div>
+          <div id="sidebar-identifiers-list" class="sidebar-identifiers-list"></div>
+        </div>
+
+        <div id="sidebar-related-verified" class="sidebar-section hidden">
+          <div class="sidebar-section-header verified">
+            <span class="section-icon">✓</span> Verified Links
+          </div>
+          <div id="sidebar-related-verified-list" class="sidebar-related-list"></div>
+        </div>
+
+        <div id="sidebar-related-curation" class="sidebar-section hidden">
+          <div class="sidebar-section-header needs-curation">
+            <span class="section-icon">⚠</span> Needs Curation
+          </div>
+          <div id="sidebar-related-curation-list" class="sidebar-related-list"></div>
+        </div>
+
         <div id="sidebar-potential" class="sidebar-potential hidden">
           <div class="sidebar-potential-header">
             <span class="sparkle">✨</span>

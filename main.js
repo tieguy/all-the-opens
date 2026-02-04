@@ -99,6 +99,51 @@ function getConnectionColor(type) {
   return CONNECTION_TYPES[type]?.color || '#30363d';
 }
 
+// Link strength based on linkedVia array length
+function getLinkStrength(linkedVia) {
+  if (!linkedVia || linkedVia.length === 0) return 1;
+  return linkedVia.length;
+}
+
+function getLinkStrokeWidth(linkedVia) {
+  const strength = getLinkStrength(linkedVia);
+  if (strength >= 4) return 4;      // Strong: 4+ authorities
+  if (strength >= 2) return 2.5;    // Medium: 2-3 authorities
+  return 1.5;                       // Weak: 1 authority
+}
+
+// Human-readable names for authority systems
+const AUTHORITY_NAMES = {
+  viaf: 'VIAF',
+  lc: 'Library of Congress',
+  isni: 'ISNI',
+  wikidata: 'Wikidata',
+  'lc-subject': 'LC Subject Headings',
+  fast: 'OCLC FAST',
+  geonames: 'GeoNames',
+  coordinates: 'Geographic coordinates',
+  'smithsonian-id': 'Smithsonian',
+  isbn: 'ISBN',
+  manual: 'Manual curation'
+};
+
+// URLs for identifier lookups
+const IDENTIFIER_URLS = {
+  wikidata: (id) => `https://www.wikidata.org/wiki/${id.startsWith('Q') ? id : 'Q' + id}`,
+  viaf: (id) => `https://viaf.org/viaf/${id}`,
+  isni: (id) => `https://isni.org/isni/${id}`,
+  lc: (id) => `https://id.loc.gov/authorities/names/${id}`,
+  'lc-subject': (id) => `https://id.loc.gov/authorities/subjects/${id}`,
+  fast: (id) => `https://id.worldcat.org/fast/${id}`,
+  geonames: (id) => `https://www.geonames.org/${id}`
+};
+
+function formatLinkedVia(linkedVia) {
+  if (!linkedVia || linkedVia.length === 0) return 'No linking data';
+  const names = linkedVia.map(id => AUTHORITY_NAMES[id] || id);
+  return `Linked via: ${names.join(', ')}`;
+}
+
 function truncateTitle(title, maxLength = 22) {
   if (title.length <= maxLength) return title;
   return title.slice(0, maxLength - 1).trim() + '…';
@@ -161,6 +206,81 @@ function updateSidebar(d) {
     }
   } else {
     potentialSection.classList.add('hidden');
+  }
+
+  // Handle authority identifiers
+  const identifiersSection = document.getElementById('sidebar-identifiers');
+  const identifiersList = document.getElementById('sidebar-identifiers-list');
+  if (d.identifiers && Object.keys(d.identifiers).length > 0) {
+    identifiersSection.classList.remove('hidden');
+    identifiersList.innerHTML = '';
+
+    for (const [key, value] of Object.entries(d.identifiers)) {
+      const item = document.createElement('a');
+      item.className = 'sidebar-identifier-item';
+      item.href = IDENTIFIER_URLS[key] ? IDENTIFIER_URLS[key](value) : '#';
+      item.target = '_blank';
+      item.rel = 'noopener';
+      item.innerHTML = `
+        <span class="identifier-name">${AUTHORITY_NAMES[key] || key}</span>
+        <span class="identifier-value">${value}</span>
+      `;
+      identifiersList.appendChild(item);
+    }
+  } else {
+    identifiersSection.classList.add('hidden');
+  }
+
+  // Handle verified related content
+  const verifiedSection = document.getElementById('sidebar-related-verified');
+  const verifiedList = document.getElementById('sidebar-related-verified-list');
+  // Show this section if we have identifiers (entity could have verified links)
+  if (d.identifiers && Object.keys(d.identifiers).length > 0) {
+    verifiedSection.classList.remove('hidden');
+    verifiedList.innerHTML = '';
+
+    if (d.relatedContent?.verified?.length > 0) {
+      for (const item of d.relatedContent.verified) {
+        const relatedItem = itemCache.get(item.id);
+        const div = document.createElement('div');
+        div.className = 'sidebar-related-item verified';
+        div.innerHTML = `
+          <div class="related-title">${relatedItem?.title || item.id}</div>
+          <div class="related-relationship">${item.relationship}</div>
+          <div class="related-source">${relatedItem ? getSourceName(relatedItem.source) : ''}</div>
+        `;
+        verifiedList.appendChild(div);
+      }
+    } else {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'sidebar-related-empty';
+      emptyDiv.textContent = 'None available';
+      verifiedList.appendChild(emptyDiv);
+    }
+  } else {
+    verifiedSection.classList.add('hidden');
+  }
+
+  // Handle needs curation content
+  const curationSection = document.getElementById('sidebar-related-curation');
+  const curationList = document.getElementById('sidebar-related-curation-list');
+  if (d.relatedContent?.needsCuration?.length > 0) {
+    curationSection.classList.remove('hidden');
+    curationList.innerHTML = '';
+
+    for (const item of d.relatedContent.needsCuration) {
+      const relatedItem = itemCache.get(item.id);
+      const div = document.createElement('div');
+      div.className = 'sidebar-related-item needs-curation';
+      div.innerHTML = `
+        <div class="related-title">${relatedItem?.title || item.id}</div>
+        <div class="related-relationship">${item.relationship}</div>
+        <div class="related-reason">${item.reason}</div>
+      `;
+      curationList.appendChild(div);
+    }
+  } else {
+    curationSection.classList.add('hidden');
   }
 
   sidebar.querySelector('.sidebar-status').textContent = expanded
@@ -228,8 +348,8 @@ async function loadItem(itemId) {
     return itemCache.get(itemId);
   }
 
-  // Determine file path based on ID
-  const filePath = `data/apollo-11/items/${itemId}.json`;
+  // Determine file path based on ID (with cache-busting)
+  const filePath = `data/apollo-11/items/${itemId}.json?v=${Date.now()}`;
 
   try {
     const response = await fetch(filePath);
@@ -290,9 +410,23 @@ async function expandNode(event, d) {
 
   console.log(`Expanding ${d.id} with ${nodeConnections.length} connections`);
 
+  // Calculate outward direction from graph center
+  const width = +svg.attr('width');
+  const height = +svg.attr('height');
+  const centerX = width / 2;
+  const centerY = height / 2;
+
+  // Direction from center to parent node
+  const dx = d.x - centerX;
+  const dy = d.y - centerY;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const dirX = dx / dist;
+  const dirY = dy / dist;
+
   // Load all connected items
   const newNodes = [];
   const newLinks = [];
+  let nodeIndex = 0;
 
   for (const conn of nodeConnections) {
     // Check if node already exists in graph
@@ -304,23 +438,33 @@ async function expandNode(event, d) {
         source: d.id,
         target: conn.targetId,
         type: conn.type,
-        label: conn.label
+        label: conn.label,
+        linkedVia: conn.linkedVia
       });
     } else {
       // Load the item data
       const item = await loadItem(conn.targetId);
 
       if (item) {
-        // Position new node near parent
-        item.x = d.x + (Math.random() - 0.5) * 100;
-        item.y = d.y + (Math.random() - 0.5) * 100;
+        // Position new node outward from parent, away from center
+        // Spread nodes in an arc facing outward
+        const spreadAngle = (nodeIndex - (nodeConnections.length - 1) / 2) * 0.4;
+        const cos = Math.cos(spreadAngle);
+        const sin = Math.sin(spreadAngle);
+        const outX = dirX * cos - dirY * sin;
+        const outY = dirX * sin + dirY * cos;
+
+        item.x = d.x + outX * 120 + (Math.random() - 0.5) * 30;
+        item.y = d.y + outY * 120 + (Math.random() - 0.5) * 30;
+        nodeIndex++;
 
         newNodes.push(item);
         newLinks.push({
           source: d.id,
           target: conn.targetId,
           type: conn.type,
-          label: conn.label
+          label: conn.label,
+          linkedVia: conn.linkedVia
         });
       }
     }
@@ -366,7 +510,7 @@ async function init() {
     render();
     setupLegend();
 
-    console.log('Rabbit Hole Browser initialized with seed:', seed.title);
+    console.log('Knowledge Commons Consortium Browser initialized with seed:', seed.title);
   } catch (error) {
     console.error('Failed to initialize:', error);
   }
@@ -442,6 +586,8 @@ function ticked() {
   // Update link positions
   g.selectAll('.link-group').each(function(d) {
     const group = d3.select(this);
+    const midX = (d.source.x + d.target.x) / 2;
+    const midY = (d.source.y + d.target.y) / 2;
 
     group.select('line')
       .attr('x1', d.source.x)
@@ -449,9 +595,13 @@ function ticked() {
       .attr('x2', d.target.x)
       .attr('y2', d.target.y);
 
-    group.select('text')
-      .attr('x', (d.source.x + d.target.x) / 2)
-      .attr('y', (d.source.y + d.target.y) / 2);
+    group.select('.link-label')
+      .attr('x', midX)
+      .attr('y', midY);
+
+    group.select('.link-glue')
+      .attr('x', midX)
+      .attr('y', midY);
   });
 
   // Update node positions
@@ -477,17 +627,18 @@ function render() {
         .remove()
     );
 
-  // Link lines with type-based colors
+  // Link lines with type-based colors and strength-based width
   linkGroups.selectAll('line')
     .data(d => [d])
     .join('line')
     .attr('class', 'link')
     .attr('stroke', d => getConnectionColor(d.type))
-    .attr('stroke-width', 2)
+    .attr('stroke-width', d => getLinkStrokeWidth(d.linkedVia))
     .attr('stroke-opacity', 0.6);
 
   // Link labels (hidden by default, shown on hover)
-  linkGroups.selectAll('text')
+  // Now shows linkedVia info alongside the label
+  linkGroups.selectAll('text.link-label')
     .data(d => [d])
     .join('text')
     .attr('class', 'link-label')
@@ -499,19 +650,35 @@ function render() {
     .attr('opacity', 0)
     .text(d => d.label || '');
 
+  // Secondary label showing linkedVia on hover
+  linkGroups.selectAll('text.link-glue')
+    .data(d => [d])
+    .join('text')
+    .attr('class', 'link-glue')
+    .attr('text-anchor', 'middle')
+    .attr('fill', '#8b949e')
+    .attr('font-size', '9px')
+    .attr('dy', 6)
+    .attr('opacity', 0)
+    .text(d => formatLinkedVia(d.linkedVia));
+
   // Add hover behavior for link labels
   linkGroups
-    .on('mouseenter', function(_event, _d) {
+    .on('mouseenter', function(_event, d) {
+      // Raise this link group above others (SVG z-order = DOM order)
+      d3.select(this).raise();
       d3.select(this).select('.link-label').attr('opacity', 1);
+      d3.select(this).select('.link-glue').attr('opacity', 1);
       d3.select(this).select('.link')
         .attr('stroke-opacity', 1)
-        .attr('stroke-width', 3);
+        .attr('stroke-width', getLinkStrokeWidth(d.linkedVia) + 1);
     })
-    .on('mouseleave', function(_event, _d) {
+    .on('mouseleave', function(_event, d) {
       d3.select(this).select('.link-label').attr('opacity', 0);
+      d3.select(this).select('.link-glue').attr('opacity', 0);
       d3.select(this).select('.link')
         .attr('stroke-opacity', 0.6)
-        .attr('stroke-width', 2);
+        .attr('stroke-width', getLinkStrokeWidth(d.linkedVia));
     });
 
   // Render nodes

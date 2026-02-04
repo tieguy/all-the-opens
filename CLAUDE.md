@@ -38,9 +38,10 @@ All data is pre-cached JSON. No live API calls.
 
 **Connections** (`data/{topic}/connections.json`):
 ```
-{[nodeId]: [{targetId, type, label}]}
+{[nodeId]: [{targetId, type, label, linkedVia?}]}
 ```
 - `type`: `person | subject | location | time | creator`
+- `linkedVia`: Array of authority system IDs that enable this link (e.g., `["viaf", "lc", "wikidata"]`). Line thickness derived from array length.
 
 **Seed** (`data/{topic}/seed.json`): Starting node for the graph.
 

@@ -5,6 +5,26 @@
   "description": "The Apollo program was a NASA human spaceflight program that landed the first humans on the Moon between 1969 and 1972. It accomplished President Kennedy's goal of landing a man on the Moon.",
   "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Apollo_program_insignia.png/200px-Apollo_program_insignia.png",
   "url": "https://en.wikipedia.org/wiki/Apollo_program",
+  "identifiers": {
+    "wikidata": "Q182252",
+    "lc-subject": "sh85005377",
+    "fast": "809535"
+  },
+  "relatedContent": {
+    "verified": [],
+    "needsCuration": [
+      {
+        "id": "ia-apollo11-footage",
+        "relationship": "mission documentation",
+        "reason": "Internet Archive lacks LC subject heading link"
+      },
+      {
+        "id": "smithsonian-command-module",
+        "relationship": "program artifact",
+        "reason": "Smithsonian catalog lacks FAST/LC subject link"
+      }
+    ]
+  },
   "connections": [
     {
       "targetId": "wiki-jfk",

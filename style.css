@@ -87,7 +87,23 @@ footer {
 .link-label {
   pointer-events: none;
   user-select: none;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  font-size: 12px;
+  font-weight: 600;
+  paint-order: stroke fill;
+  stroke: #0d1117;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.link-glue {
+  pointer-events: none;
+  user-select: none;
+  font-size: 10px;
+  fill: #c9d1d9;
+  paint-order: stroke fill;
+  stroke: #0d1117;
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
 
 .link-group {
@@ -251,6 +267,123 @@ header .subtitle {
   color: #3fb950;
   font-style: italic;
   margin-top: 8px;
+}
+
+/* Sidebar sections (identifiers, related content) */
+.sidebar-section {
+  margin: 16px 0;
+  padding-top: 12px;
+  border-top: 1px solid #30363d;
+}
+
+.sidebar-section-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-section-header .section-icon {
+  font-size: 12px;
+}
+
+.sidebar-section-header.verified {
+  color: #3fb950;
+}
+
+.sidebar-section-header.needs-curation {
+  color: #d29922;
+}
+
+/* Identifier items */
+.sidebar-identifiers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-identifier-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: #21262d;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.sidebar-identifier-item:hover {
+  background: #30363d;
+}
+
+.identifier-name {
+  font-size: 11px;
+  color: #8b949e;
+}
+
+.identifier-value {
+  font-size: 11px;
+  color: #58a6ff;
+  font-family: monospace;
+}
+
+/* Related content items */
+.sidebar-related-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar-related-item {
+  padding: 8px;
+  background: #21262d;
+  border-radius: 4px;
+  border-left: 3px solid #30363d;
+}
+
+.sidebar-related-item.verified {
+  border-left-color: #3fb950;
+}
+
+.sidebar-related-item.needs-curation {
+  border-left-color: #d29922;
+}
+
+.related-title {
+  font-size: 12px;
+  color: #f0f6fc;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.related-relationship {
+  font-size: 11px;
+  color: #8b949e;
+  margin-bottom: 2px;
+}
+
+.related-source {
+  font-size: 10px;
+  color: #58a6ff;
+}
+
+.related-reason {
+  font-size: 10px;
+  color: #d29922;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.sidebar-related-empty {
+  font-size: 11px;
+  color: #6e7681;
+  font-style: italic;
+  padding: 8px;
 }
 
 /* Legend panel */
