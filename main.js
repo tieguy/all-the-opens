@@ -56,6 +56,34 @@ function getSourceName(source) {
   return SOURCES[source]?.name || source;
 }
 
+// Connection type colors (muted palette)
+const CONNECTION_TYPES = {
+  person: {
+    color: '#8957e5',
+    name: 'Person'
+  },
+  subject: {
+    color: '#3fb950',
+    name: 'Subject'
+  },
+  location: {
+    color: '#f0883e',
+    name: 'Location'
+  },
+  time: {
+    color: '#58a6ff',
+    name: 'Time Period'
+  },
+  creator: {
+    color: '#f778ba',
+    name: 'Creator'
+  }
+};
+
+function getConnectionColor(type) {
+  return CONNECTION_TYPES[type]?.color || '#30363d';
+}
+
 function showTooltip(event, d) {
   const tooltip = document.getElementById('tooltip');
   const expanded = expandedNodes.has(d.id);
@@ -327,13 +355,14 @@ function render() {
         .remove()
     );
 
-  // Link lines
+  // Link lines with type-based colors
   linkGroups.selectAll('line')
     .data(d => [d])
     .join('line')
     .attr('class', 'link')
-    .attr('stroke', '#30363d')
-    .attr('stroke-width', 2);
+    .attr('stroke', d => getConnectionColor(d.type))
+    .attr('stroke-width', 2)
+    .attr('stroke-opacity', 0.6);
 
   // Link labels (hidden by default, shown on hover)
   linkGroups.selectAll('text')
@@ -341,21 +370,26 @@ function render() {
     .join('text')
     .attr('class', 'link-label')
     .attr('text-anchor', 'middle')
-    .attr('fill', '#8b949e')
-    .attr('font-size', '10px')
-    .attr('dy', -5)
+    .attr('fill', d => getConnectionColor(d.type))
+    .attr('font-size', '11px')
+    .attr('font-weight', '500')
+    .attr('dy', -8)
     .attr('opacity', 0)
     .text(d => d.label || '');
 
   // Add hover behavior for link labels
   linkGroups
-    .on('mouseenter', function() {
+    .on('mouseenter', function(event, d) {
       d3.select(this).select('.link-label').attr('opacity', 1);
-      d3.select(this).select('.link').attr('stroke', '#58a6ff').attr('stroke-width', 3);
+      d3.select(this).select('.link')
+        .attr('stroke-opacity', 1)
+        .attr('stroke-width', 3);
     })
-    .on('mouseleave', function() {
+    .on('mouseleave', function(event, d) {
       d3.select(this).select('.link-label').attr('opacity', 0);
-      d3.select(this).select('.link').attr('stroke', '#30363d').attr('stroke-width', 2);
+      d3.select(this).select('.link')
+        .attr('stroke-opacity', 0.6)
+        .attr('stroke-width', 2);
     });
 
   // Render nodes
