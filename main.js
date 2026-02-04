@@ -172,6 +172,7 @@ function updateSidebar(d) {
   // Show content, hide empty state
   empty.classList.add('hidden');
   content.classList.remove('hidden');
+  sidebar.classList.add('active'); // For mobile slide-up
 
   sidebar.querySelector('.sidebar-title').textContent = d.title;
   sidebar.querySelector('.sidebar-description').textContent = d.description || '';
@@ -525,6 +526,13 @@ function setupSvg() {
       zoomBehavior.transform,
       d3.zoomIdentity.translate(width / 2, height / 2).scale(1)
     );
+  });
+
+  // Dismiss sidebar on mobile when clicking graph background
+  svg.on('click', (event) => {
+    if (event.target === svg.node()) {
+      document.getElementById('sidebar').classList.remove('active');
+    }
   });
 }
 

@@ -522,3 +522,124 @@ body {
   animation: none;
   stroke-opacity: 1;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  /* Left panel becomes a compact top bar */
+  .left-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: auto;
+    transform: none;
+    width: 100%;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px var(--shadow-color);
+  }
+
+  .left-panel-header h1 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+
+  .left-panel-subtitle {
+    font-size: 11px;
+  }
+
+  /* Hide data sources section on mobile */
+  .left-panel-section {
+    display: none;
+  }
+
+  /* Right sidebar becomes bottom sheet */
+  .sidebar {
+    position: fixed;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    top: auto;
+    transform: translateY(100%);
+    width: 100%;
+    max-height: 50vh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -4px 16px var(--shadow-color);
+    transition: transform 0.3s ease;
+    padding: 16px;
+  }
+
+  .sidebar.active {
+    transform: translateY(0);
+  }
+
+  /* Add drag handle indicator */
+  .sidebar::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    margin: 0 auto 12px;
+  }
+
+  .sidebar-empty {
+    padding: 12px 0;
+  }
+
+  .sidebar-title {
+    font-size: 16px;
+  }
+
+  .sidebar-description {
+    font-size: 13px;
+  }
+
+  /* Zoom controls - move to bottom left, above sidebar */
+  #controls {
+    bottom: auto;
+    top: 70px;
+    right: 8px;
+  }
+
+  #controls button {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Give graph room for top bar */
+  #graph {
+    margin-top: 60px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .left-panel {
+    padding: 10px 12px;
+  }
+
+  .left-panel-header h1 {
+    font-size: 0.9rem;
+  }
+
+  .sidebar {
+    max-height: 60vh;
+    padding: 12px;
+  }
+
+  .sidebar-title {
+    font-size: 15px;
+  }
+
+  .sidebar-section {
+    margin: 12px 0;
+    padding-top: 10px;
+  }
+}
