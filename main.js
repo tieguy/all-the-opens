@@ -525,20 +525,34 @@ function render() {
     .data(d => [d])
     .join(
       enter => enter.append('circle')
-        .attr('class', d => `node-circle ${expandedNodes.has(d.id) ? 'expanded' : 'expandable'}`)
+        .attr('class', d => {
+          const classes = ['node-circle'];
+          if (expandedNodes.has(d.id)) classes.push('expanded');
+          else classes.push('expandable');
+          if (isLeafNode(d)) classes.push('leaf');
+          return classes.join(' ');
+        })
         .attr('r', 0)
         .attr('fill', d => getSourceColor(d.source))
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 2)
+        .attr('stroke', d => isLeafNode(d) ? '#3fb950' : '#fff')
+        .attr('stroke-width', d => isLeafNode(d) ? 3 : 2)
         .attr('opacity', 0.9)
         .call(enter => enter.transition()
           .duration(400)
           .ease(d3.easeCubicOut)
           .attr('r', 24)),
       update => update
-        .attr('class', d => `node-circle ${expandedNodes.has(d.id) ? 'expanded' : 'expandable'}`)
+        .attr('class', d => {
+          const classes = ['node-circle'];
+          if (expandedNodes.has(d.id)) classes.push('expanded');
+          else classes.push('expandable');
+          if (isLeafNode(d)) classes.push('leaf');
+          return classes.join(' ');
+        })
         .attr('r', 24)
-        .attr('fill', d => getSourceColor(d.source)),
+        .attr('fill', d => getSourceColor(d.source))
+        .attr('stroke', d => isLeafNode(d) ? '#3fb950' : '#fff')
+        .attr('stroke-width', d => isLeafNode(d) ? 3 : 2),
       exit => exit.remove()
     );
 

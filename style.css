@@ -430,3 +430,24 @@ header .subtitle {
   padding-top: 8px;
   border-top: 1px solid #30363d;
 }
+
+/* Leaf node distinctive styling */
+.node-circle.leaf {
+  stroke-dasharray: 4 2;
+  animation: leaf-pulse 2s ease-in-out infinite;
+}
+
+@keyframes leaf-pulse {
+  0%, 100% {
+    stroke-opacity: 1;
+  }
+  50% {
+    stroke-opacity: 0.5;
+  }
+}
+
+.node:hover .node-circle.leaf {
+  stroke-dasharray: none;
+  animation: none;
+  stroke-opacity: 1;
+}
