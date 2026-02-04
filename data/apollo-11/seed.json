@@ -1,0 +1,9 @@
+{
+  "id": "ia-apollo11-mission",
+  "source": "internet_archive",
+  "title": "Apollo 11",
+  "description": "The Apollo 11 mission was the first crewed mission to land on the Moon. Commander Neil Armstrong and lunar module pilot Buzz Aldrin landed the Apollo Lunar Module Eagle on July 20, 1969.",
+  "thumbnail": "https://archive.org/services/img/apollo11",
+  "url": "https://archive.org/details/apollo11",
+  "connections": []
+}
