@@ -104,6 +104,76 @@ async function loadConnections() {
   }
 }
 
+async function expandNode(event, d) {
+  // Prevent event bubbling to zoom
+  event.stopPropagation();
+
+  // Don't expand if already expanded
+  if (expandedNodes.has(d.id)) {
+    console.log(`Node ${d.id} already expanded`);
+    return;
+  }
+
+  // Load connections data
+  const connections = await loadConnections();
+  const nodeConnections = connections[d.id];
+
+  if (!nodeConnections || nodeConnections.length === 0) {
+    console.log(`No connections for ${d.id}`);
+    // Mark as expanded even if no connections (it's a leaf)
+    expandedNodes.add(d.id);
+    return;
+  }
+
+  console.log(`Expanding ${d.id} with ${nodeConnections.length} connections`);
+
+  // Load all connected items
+  const newNodes = [];
+  const newLinks = [];
+
+  for (const conn of nodeConnections) {
+    // Check if node already exists in graph
+    const existingNode = nodes.find(n => n.id === conn.targetId);
+
+    if (existingNode) {
+      // Just add link to existing node
+      newLinks.push({
+        source: d.id,
+        target: conn.targetId,
+        type: conn.type,
+        label: conn.label
+      });
+    } else {
+      // Load the item data
+      const item = await loadItem(conn.targetId);
+
+      if (item) {
+        // Position new node near parent
+        item.x = d.x + (Math.random() - 0.5) * 100;
+        item.y = d.y + (Math.random() - 0.5) * 100;
+
+        newNodes.push(item);
+        newLinks.push({
+          source: d.id,
+          target: conn.targetId,
+          type: conn.type,
+          label: conn.label
+        });
+      }
+    }
+  }
+
+  // Mark as expanded
+  expandedNodes.add(d.id);
+
+  // Add to graph
+  if (newNodes.length > 0 || newLinks.length > 0) {
+    nodes = [...nodes, ...newNodes];
+    links = [...links, ...newLinks];
+    render();
+  }
+}
+
 // Graph state
 let nodes = [];
 let links = [];
@@ -111,6 +181,9 @@ let simulation = null;
 let svg = null;
 let g = null;
 let zoomBehavior = null;
+
+// Track which nodes have been expanded
+const expandedNodes = new Set();
 
 // Initialize the graph
 async function init() {
