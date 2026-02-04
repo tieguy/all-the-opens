@@ -1,66 +1,67 @@
 import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 
 // Source configuration with colors and favicons
+// Muted, scholarly color palette
 const SOURCES = {
   internet_archive: {
-    color: '#428bca',
+    color: '#6b8cae',
     name: 'Internet Archive',
     favicon: 'https://archive.org/favicon.ico'
   },
   wikipedia: {
-    color: '#636466',
+    color: '#5c6670',
     name: 'Wikipedia',
     favicon: 'https://en.wikipedia.org/favicon.ico'
   },
   wikimedia_commons: {
-    color: '#006699',
+    color: '#4a7c94',
     name: 'Wikimedia Commons',
     favicon: 'https://commons.wikimedia.org/favicon.ico'
   },
   dpla: {
-    color: '#0066cc',
+    color: '#3d6a8c',
     name: 'DPLA',
     favicon: 'https://dp.la/favicon.ico'
   },
   openlibrary: {
-    color: '#e47911',
+    color: '#9a7a4a',
     name: 'OpenLibrary',
     favicon: 'https://openlibrary.org/favicon.ico'
   },
   arxiv: {
-    color: '#b31b1b',
+    color: '#8c4a4a',
     name: 'arXiv',
     favicon: 'https://arxiv.org/favicon.ico'
   },
   met_museum: {
-    color: '#e4002b',
+    color: '#8c3d3d',
     name: 'Met Museum',
     favicon: 'https://www.metmuseum.org/favicon.ico'
   },
   smithsonian: {
-    color: '#5b9bd5',
+    color: '#5a7fa8',
     name: 'Smithsonian',
     favicon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Smithsonian_sun_logo_no_text.svg/32px-Smithsonian_sun_logo_no_text.svg.png'
   },
   openstreetmap: {
-    color: '#7ebc6f',
+    color: '#6a9a6a',
     name: 'OpenStreetMap',
     favicon: 'https://www.openstreetmap.org/favicon.ico'
   },
   inaturalist: {
-    color: '#74ac00',
+    color: '#5a8a4a',
     name: 'iNaturalist',
     favicon: 'https://www.inaturalist.org/favicon.ico'
   },
   gbif: {
-    color: '#4e9a47',
+    color: '#4a7a4a',
     name: 'GBIF',
     favicon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Gbif-full-green-logo.svg/32px-Gbif-full-green-logo.svg.png'
   }
 };
 
 function getSourceColor(source) {
-  return SOURCES[source]?.color || '#238636';
+  return SOURCES[source]?.color || '#2e7d32';
 }
 
 function getSourceFavicon(source) {
@@ -71,32 +72,32 @@ function getSourceName(source) {
   return SOURCES[source]?.name || source;
 }
 
-// Connection type colors (muted palette)
+// Connection type colors (muted, scholarly palette)
 const CONNECTION_TYPES = {
   person: {
-    color: '#8957e5',
+    color: '#6b5b8c',
     name: 'Person'
   },
   subject: {
-    color: '#3fb950',
+    color: '#4a7a5a',
     name: 'Subject'
   },
   location: {
-    color: '#f0883e',
+    color: '#9a7a4a',
     name: 'Location'
   },
   time: {
-    color: '#58a6ff',
+    color: '#4a6a8c',
     name: 'Time Period'
   },
   creator: {
-    color: '#f778ba',
+    color: '#8c5a6a',
     name: 'Creator'
   }
 };
 
 function getConnectionColor(type) {
-  return CONNECTION_TYPES[type]?.color || '#30363d';
+  return CONNECTION_TYPES[type]?.color || '#888888';
 }
 
 // Link strength based on linkedVia array length
@@ -656,7 +657,7 @@ function render() {
     .join('text')
     .attr('class', 'link-glue')
     .attr('text-anchor', 'middle')
-    .attr('fill', '#8b949e')
+    .attr('fill', '#555555')
     .attr('font-size', '9px')
     .attr('dy', 6)
     .attr('opacity', 0)
@@ -726,7 +727,7 @@ function render() {
         })
         .attr('r', 0)
         .attr('fill', d => getSourceColor(d.source))
-        .attr('stroke', d => isLeafNode(d) ? '#3fb950' : '#fff')
+        .attr('stroke', d => isLeafNode(d) ? '#2e7d32' : '#e8e4dc')
         .attr('stroke-width', d => isLeafNode(d) ? 3 : 2)
         .attr('opacity', 0.9)
         .call(enter => enter.transition()
@@ -743,7 +744,7 @@ function render() {
         })
         .attr('r', 24)
         .attr('fill', d => getSourceColor(d.source))
-        .attr('stroke', d => isLeafNode(d) ? '#3fb950' : '#fff')
+        .attr('stroke', d => isLeafNode(d) ? '#2e7d32' : '#e8e4dc')
         .attr('stroke-width', d => isLeafNode(d) ? 3 : 2),
       exit => exit.remove()
     );
@@ -788,8 +789,8 @@ function render() {
         .attr('cx', 18)
         .attr('cy', -18)
         .attr('r', 8)
-        .attr('fill', '#238636')
-        .attr('stroke', '#fff')
+        .attr('fill', '#2e7d32')
+        .attr('stroke', '#faf8f5')
         .attr('stroke-width', 1),
       update => update,
       exit => exit.remove()
@@ -828,7 +829,7 @@ function render() {
           .attr('ry', 10)
           .attr('width', 50)
           .attr('height', 20)
-          .attr('fill', '#238636')
+          .attr('fill', '#2e7d32')
           .attr('opacity', 0.9);
 
         // Sparkle icon
@@ -861,7 +862,7 @@ function render() {
     .data(d => [d])
     .join('rect')
     .attr('class', 'node-title-bg')
-    .attr('fill', 'rgba(13, 17, 23, 0.85)')
+    .attr('fill', 'rgba(250, 248, 245, 0.9)')
     .attr('rx', 3)
     .attr('ry', 3)
     .attr('y', 30)
@@ -876,8 +877,9 @@ function render() {
     .attr('class', 'node-title')
     .attr('dy', 44)
     .attr('text-anchor', 'middle')
-    .attr('fill', '#c9d1d9')
+    .attr('fill', '#2c2c2c')
     .attr('font-size', '11px')
+    .attr('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif')
     .text(d => truncateTitle(d.title));
 
   // Restart simulation with gentler reheat

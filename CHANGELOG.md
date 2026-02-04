@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 
 ### Changed
+- Switch to light library-style theme (#15)
 - Multi-source knowledge panel sidebar (#10)
 - Rename to Knowledge Commons Consortium Browser (#14)
 - Fix z-index: link hover labels obscured by nodes (#13)
