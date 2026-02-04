@@ -377,3 +377,56 @@ header .subtitle {
 .potential-sparkle {
   filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
 }
+
+/* Potential breakdown in tooltip */
+.tooltip-potential {
+  background: #21262d;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+
+.tooltip-potential.hidden {
+  display: none;
+}
+
+.tooltip-potential-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3fb950;
+  margin-bottom: 8px;
+}
+
+.tooltip-potential-header .sparkle {
+  margin-right: 4px;
+}
+
+.tooltip-potential-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.tooltip-potential-item {
+  display: flex;
+  justify-content: space-between;
+  color: #8b949e;
+}
+
+.tooltip-potential-item .source-name {
+  color: #c9d1d9;
+}
+
+.tooltip-potential-item .count {
+  color: #8b949e;
+}
+
+.tooltip-potential-message {
+  font-size: 10px;
+  color: #6e7681;
+  font-style: italic;
+  padding-top: 8px;
+  border-top: 1px solid #30363d;
+}

@@ -108,18 +108,48 @@ function showTooltip(event, d) {
   linkElement.href = d.url;
   linkElement.style.display = d.url ? 'inline-block' : 'none';
 
+  // Handle potential counts for leaf nodes
+  const potentialSection = document.getElementById('tooltip-potential');
+  if (d.potential && d.potential.total > 0) {
+    potentialSection.classList.remove('hidden');
+    document.getElementById('tooltip-potential-total').textContent =
+      d.potential.total.toLocaleString();
+
+    // Build breakdown
+    const breakdownContainer = document.getElementById('tooltip-potential-breakdown');
+    breakdownContainer.innerHTML = '';
+
+    // Sort sources by count descending
+    const sources = Object.entries(d.potential)
+      .filter(([key]) => key !== 'total' && d.potential[key] > 0)
+      .sort((a, b) => b[1] - a[1]);
+
+    for (const [source, count] of sources) {
+      const item = document.createElement('div');
+      item.className = 'tooltip-potential-item';
+      item.innerHTML = `
+        <span class="source-name">${getSourceName(source)}</span>
+        <span class="count">${count.toLocaleString()}</span>
+      `;
+      breakdownContainer.appendChild(item);
+    }
+  } else {
+    potentialSection.classList.add('hidden');
+  }
+
   tooltip.querySelector('.tooltip-action').textContent = expanded
     ? 'Already explored'
-    : 'Click to explore connections';
+    : d.potential && d.potential.total > 0
+      ? 'This is a leaf node - no cached connections'
+      : 'Click to explore connections';
 
   // Position tooltip near cursor but not overlapping
   const x = event.pageX + 15;
   const y = event.pageY + 15;
 
-  // Keep tooltip on screen
-  const rect = tooltip.getBoundingClientRect();
-  const maxX = window.innerWidth - rect.width;
-  const maxY = window.innerHeight - rect.height;
+  // Keep tooltip on screen - account for larger tooltip with potential
+  const maxX = window.innerWidth - 340;
+  const maxY = window.innerHeight - 280;
 
   tooltip.style.left = `${Math.min(x, maxX)}px`;
   tooltip.style.top = `${Math.min(y, maxY)}px`;
