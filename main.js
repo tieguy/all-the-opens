@@ -91,6 +91,11 @@ function showTooltip(event, d) {
   tooltip.querySelector('.tooltip-title').textContent = d.title;
   tooltip.querySelector('.tooltip-description').textContent = d.description || '';
   tooltip.querySelector('.tooltip-source').textContent = `Source: ${getSourceName(d.source)}`;
+
+  const linkElement = document.getElementById('tooltip-link');
+  linkElement.href = d.url;
+  linkElement.style.display = d.url ? 'inline-block' : 'none';
+
   tooltip.querySelector('.tooltip-action').textContent = expanded
     ? 'Already explored'
     : 'Click to explore connections';
@@ -102,7 +107,7 @@ function showTooltip(event, d) {
   // Keep tooltip on screen
   const rect = tooltip.getBoundingClientRect();
   const maxX = window.innerWidth - 320;
-  const maxY = window.innerHeight - 150;
+  const maxY = window.innerHeight - 180;
 
   tooltip.style.left = `${Math.min(x, maxX)}px`;
   tooltip.style.top = `${Math.min(y, maxY)}px`;

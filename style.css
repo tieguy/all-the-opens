@@ -216,6 +216,21 @@ header .subtitle {
   margin-bottom: 8px;
 }
 
+.tooltip-link {
+  display: inline-block;
+  font-size: 11px;
+  color: #58a6ff;
+  text-decoration: none;
+  margin-bottom: 8px;
+  pointer-events: auto;
+  transition: color 0.2s;
+}
+
+.tooltip-link:hover {
+  color: #79c0ff;
+  text-decoration: underline;
+}
+
 .tooltip-action {
   font-size: 10px;
   color: #3fb950;
