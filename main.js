@@ -56,6 +56,37 @@ function getSourceName(source) {
   return SOURCES[source]?.name || source;
 }
 
+function showTooltip(event, d) {
+  const tooltip = document.getElementById('tooltip');
+  const expanded = expandedNodes.has(d.id);
+
+  tooltip.querySelector('.tooltip-title').textContent = d.title;
+  tooltip.querySelector('.tooltip-description').textContent = d.description || '';
+  tooltip.querySelector('.tooltip-source').textContent = `Source: ${getSourceName(d.source)}`;
+  tooltip.querySelector('.tooltip-action').textContent = expanded
+    ? 'Already explored'
+    : 'Click to explore connections';
+
+  // Position tooltip near cursor but not overlapping
+  const x = event.pageX + 15;
+  const y = event.pageY + 15;
+
+  // Keep tooltip on screen
+  const rect = tooltip.getBoundingClientRect();
+  const maxX = window.innerWidth - 320;
+  const maxY = window.innerHeight - 150;
+
+  tooltip.style.left = `${Math.min(x, maxX)}px`;
+  tooltip.style.top = `${Math.min(y, maxY)}px`;
+
+  tooltip.classList.remove('hidden');
+}
+
+function hideTooltip() {
+  const tooltip = document.getElementById('tooltip');
+  tooltip.classList.add('hidden');
+}
+
 // Item cache - stores loaded items by ID
 const itemCache = new Map();
 
@@ -345,6 +376,9 @@ function render() {
           d3.select(event.currentTarget).classed('pinned', false);
           simulation.alpha(0.3).restart();
         })
+        .on('mouseenter', showTooltip)
+        .on('mousemove', showTooltip)
+        .on('mouseleave', hideTooltip)
         .call(enter => enter.transition()
           .duration(300)
           .style('opacity', 1)),
