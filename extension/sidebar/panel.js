@@ -4,6 +4,9 @@ console.log('Jenifesto sidebar panel loaded');
 
 // DOM elements
 const pageInfoEl = document.getElementById('page-info');
+const wikidataSectionEl = document.getElementById('wikidata-section');
+const wikidataInfoEl = document.getElementById('wikidata-info');
+const noWikidataEl = document.getElementById('no-wikidata');
 const resultsSection = document.getElementById('results');
 const resultsListEl = document.getElementById('results-list');
 
@@ -11,14 +14,31 @@ const resultsListEl = document.getElementById('results-list');
 function updatePageInfo(page) {
   if (!page) {
     pageInfoEl.innerHTML = '<p class="placeholder">Navigate to a Wikipedia article to begin exploring.</p>';
+    wikidataSectionEl.classList.add('hidden');
+    noWikidataEl.classList.add('hidden');
     resultsSection.classList.add('hidden');
     return;
   }
 
+  // Update page info
   pageInfoEl.innerHTML = `
     <div class="page-title">${escapeHtml(page.title)}</div>
-    ${page.qid ? `<div class="page-qid">${escapeHtml(page.qid)}</div>` : ''}
+    <div class="page-url">${escapeHtml(page.url)}</div>
   `;
+
+  // Update Wikidata section
+  if (page.qid) {
+    wikidataSectionEl.classList.remove('hidden');
+    noWikidataEl.classList.add('hidden');
+
+    const wikidataUrl = `https://www.wikidata.org/wiki/${page.qid}`;
+    wikidataInfoEl.innerHTML = `
+      <a href="${wikidataUrl}" target="_blank" rel="noopener" class="qid-badge">${escapeHtml(page.qid)}</a>
+    `;
+  } else {
+    wikidataSectionEl.classList.add('hidden');
+    noWikidataEl.classList.remove('hidden');
+  }
 }
 
 // Escape HTML to prevent XSS
