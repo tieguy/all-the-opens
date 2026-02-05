@@ -2,7 +2,7 @@
 // Handles message passing and API orchestration for tiered loading
 
 import { fetchEntity, getIdentifierUrl } from './api/wikidata.js';
-import { querySourcesByIdentifiers, getSourceConfig } from './api/sources.js';
+import { querySourcesByIdentifiers, searchSourcesByKeyword, getSourceConfig } from './api/sources.js';
 import { getCached, setCache } from './utils/cache.js';
 
 console.log('Jenifesto background script loaded');
@@ -10,46 +10,57 @@ console.log('Jenifesto background script loaded');
 // Cache TTLs
 const WIKIDATA_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const SOURCE_CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour
+const SEARCH_CACHE_TTL = 1 * 60 * 60 * 1000; // 1 hour
 
 // Current page state
 let currentPage = null;
+let currentTier2Sources = []; // Track which sources have Tier 2 results
 
 // Listen for messages
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background received:', message.type);
 
-  if (message.type === 'WIKIPEDIA_PAGE_LOADED') {
-    handlePageLoaded(message).then(sendResponse);
-    return true;
-  }
+  switch (message.type) {
+    case 'WIKIPEDIA_PAGE_LOADED':
+      handlePageLoaded(message).then(sendResponse);
+      return true;
 
-  if (message.type === 'GET_CURRENT_PAGE') {
-    sendResponse({ page: currentPage });
-    return;
-  }
-
-  if (message.type === 'GET_WIKIDATA') {
-    if (!currentPage?.qid) {
-      sendResponse({ error: 'No Q-ID available' });
+    case 'GET_CURRENT_PAGE':
+      sendResponse({ page: currentPage });
       return;
-    }
-    fetchWikidataForPage(currentPage.qid).then(
-      data => sendResponse({ data }),
-      error => sendResponse({ error: error.message })
-    );
-    return true;
-  }
 
-  if (message.type === 'GET_TIER2_RESULTS') {
-    if (!message.identifiers) {
-      sendResponse({ error: 'No identifiers provided' });
-      return;
-    }
-    fetchTier2Results(currentPage?.qid, message.identifiers).then(
-      results => sendResponse({ results }),
-      error => sendResponse({ error: error.message })
-    );
-    return true;
+    case 'GET_WIKIDATA':
+      if (!currentPage?.qid) {
+        sendResponse({ error: 'No Q-ID available' });
+        return;
+      }
+      fetchWikidataForPage(currentPage.qid).then(
+        data => sendResponse({ data }),
+        error => sendResponse({ error: error.message })
+      );
+      return true;
+
+    case 'GET_TIER2_RESULTS':
+      if (!message.identifiers) {
+        sendResponse({ error: 'No identifiers provided' });
+        return;
+      }
+      fetchTier2Results(currentPage?.qid, message.identifiers).then(
+        results => sendResponse({ results }),
+        error => sendResponse({ error: error.message })
+      );
+      return true;
+
+    case 'SEARCH_TIER3':
+      if (!message.query) {
+        sendResponse({ error: 'No query provided' });
+        return;
+      }
+      performTier3Search(message.query, currentTier2Sources).then(
+        results => sendResponse({ results }),
+        error => sendResponse({ error: error.message })
+      );
+      return true;
   }
 });
 
@@ -63,13 +74,11 @@ async function handlePageLoaded(message) {
     qid: message.qid,
     timestamp: Date.now()
   };
+  currentTier2Sources = [];
 
   await browser.storage.local.set({ currentPage });
-
-  // Notify sidebar of page change
   broadcastMessage({ type: 'PAGE_UPDATED', page: currentPage });
 
-  // If we have a Q-ID, start the tiered loading
   if (currentPage.qid) {
     try {
       // Tier 1: Fetch Wikidata
@@ -81,6 +90,10 @@ async function handlePageLoaded(message) {
         broadcastMessage({ type: 'TIER2_LOADING' });
 
         const tier2Results = await fetchTier2Results(currentPage.qid, wikidataEntity.identifiers);
+
+        // Track which sources returned Tier 2 results
+        currentTier2Sources = Object.keys(tier2Results.successful);
+
         broadcastMessage({ type: 'TIER2_LOADED', results: tier2Results });
       }
     } catch (error) {
@@ -107,7 +120,6 @@ async function fetchWikidataForPage(qid) {
   console.log('Wikidata cache miss, fetching:', qid);
   const entity = await fetchEntity(qid);
 
-  // Add URLs to identifiers
   for (const [type, info] of Object.entries(entity.identifiers)) {
     info.url = getIdentifierUrl(type, info.value);
   }
@@ -131,7 +143,6 @@ async function fetchTier2Results(qid, identifiers) {
   console.log('Tier 2 cache miss, querying sources:', qid);
   const results = await querySourcesByIdentifiers(identifiers);
 
-  // Add source config to successful results
   for (const [type, data] of Object.entries(results.successful)) {
     data.sourceConfig = getSourceConfig(type);
   }
@@ -141,12 +152,37 @@ async function fetchTier2Results(qid, identifiers) {
 }
 
 /**
- * Broadcast message to sidebar (fire and forget)
+ * Perform Tier 3 keyword search with caching
+ */
+async function performTier3Search(query, excludeSources) {
+  const cacheKey = `tier3_${query}_${excludeSources.sort().join(',')}`;
+  const cached = await getCached(cacheKey);
+
+  if (cached) {
+    console.log('Tier 3 cache hit:', query);
+    return cached;
+  }
+
+  console.log('Tier 3 cache miss, searching:', query);
+  const results = await searchSourcesByKeyword(query, excludeSources, 5);
+
+  // Add source config to results
+  for (const [type, items] of Object.entries(results.successful)) {
+    const config = getSourceConfig(type);
+    for (const item of items) {
+      item.sourceConfig = config;
+    }
+  }
+
+  await setCache(cacheKey, results, SEARCH_CACHE_TTL);
+  return results;
+}
+
+/**
+ * Broadcast message to sidebar
  */
 function broadcastMessage(message) {
-  browser.runtime.sendMessage(message).catch(() => {
-    // Sidebar not open, ignore
-  });
+  browser.runtime.sendMessage(message).catch(() => {});
 }
 
 // Restore state on startup
