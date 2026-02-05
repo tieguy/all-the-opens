@@ -1,19 +1,32 @@
 // Source Query Orchestrator
-// Coordinates queries to multiple sources based on available identifiers
+// Coordinates queries to multiple sources based on identifiers and keyword search
 
 import { fetchByOlid } from './openlibrary.js';
-import { fetchItem as fetchIAItem } from './internet-archive.js';
+import { fetchItem as fetchIAItem, searchItems as searchIA } from './internet-archive.js';
 import { fetchRecord as fetchViafRecord } from './viaf.js';
-import { fetchSpecies as fetchGbifSpecies } from './gbif.js';
-import { fetchTaxon as fetchInatTaxon } from './inaturalist.js';
+import { fetchSpecies as fetchGbifSpecies, searchSpecies as searchGbif } from './gbif.js';
+import { fetchTaxon as fetchInatTaxon, searchTaxa as searchInat } from './inaturalist.js';
+import { searchItems as searchDpla } from './dpla.js';
+import { searchPapers as searchArxiv } from './arxiv.js';
+import { searchFiles as searchCommons } from './commons.js';
 
-// Map identifier types to fetch functions
+// Map identifier types to fetch functions (Tier 2)
 const IDENTIFIER_FETCHERS = {
   openlibrary: fetchByOlid,
   internet_archive: fetchIAItem,
   viaf: fetchViafRecord,
   gbif: fetchGbifSpecies,
   inaturalist: fetchInatTaxon
+};
+
+// Map source types to search functions (Tier 3)
+const SEARCH_FUNCTIONS = {
+  internet_archive: searchIA,
+  gbif: searchGbif,
+  inaturalist: searchInat,
+  dpla: searchDpla,
+  arxiv: searchArxiv,
+  wikimedia_commons: searchCommons
 };
 
 // Source display configuration
@@ -42,11 +55,26 @@ export const SOURCE_CONFIG = {
     name: 'iNaturalist',
     color: '#74ac00',
     icon: 'https://www.inaturalist.org/favicon.ico'
+  },
+  dpla: {
+    name: 'DPLA',
+    color: '#0068a6',
+    icon: 'https://dp.la/favicon.ico'
+  },
+  arxiv: {
+    name: 'arXiv',
+    color: '#b31b1b',
+    icon: 'https://arxiv.org/favicon.ico'
+  },
+  wikimedia_commons: {
+    name: 'Wikimedia Commons',
+    color: '#006699',
+    icon: 'https://commons.wikimedia.org/favicon.ico'
   }
 };
 
 /**
- * Query all sources that have matching identifiers
+ * Query sources by identifiers (Tier 2)
  * @param {Object} identifiers - Map of identifier type to {value, label, url}
  * @returns {Promise<Object>} Results grouped by source
  */
@@ -57,23 +85,17 @@ export async function querySourcesByIdentifiers(identifiers) {
     noIdentifier: []
   };
 
-  // Determine which sources we can query
   const queries = [];
 
   for (const [type, fetcher] of Object.entries(IDENTIFIER_FETCHERS)) {
     const identifier = identifiers[type];
     if (identifier) {
-      queries.push({
-        type,
-        identifier: identifier.value,
-        fetcher
-      });
+      queries.push({ type, identifier: identifier.value, fetcher });
     } else {
       results.noIdentifier.push(type);
     }
   }
 
-  // Execute all queries in parallel
   const queryResults = await Promise.allSettled(
     queries.map(async ({ type, identifier, fetcher }) => {
       const data = await fetcher(identifier);
@@ -81,7 +103,6 @@ export async function querySourcesByIdentifiers(identifiers) {
     })
   );
 
-  // Process results
   for (let i = 0; i < queryResults.length; i++) {
     const result = queryResults[i];
     const { type } = queries[i];
@@ -91,9 +112,54 @@ export async function querySourcesByIdentifiers(identifiers) {
     } else if (result.status === 'rejected') {
       results.failed[type] = result.reason.message;
     } else {
-      // Fulfilled but null data (404)
       results.failed[type] = 'Not found';
     }
+  }
+
+  return results;
+}
+
+/**
+ * Search sources by keyword (Tier 3)
+ * @param {string} query - Search query
+ * @param {Array<string>} excludeSources - Sources to skip (already have Tier 2 results)
+ * @param {number} limitPerSource - Max results per source
+ * @returns {Promise<Object>} Results grouped by source
+ */
+export async function searchSourcesByKeyword(query, excludeSources = [], limitPerSource = 5) {
+  const results = {
+    successful: {},
+    failed: {},
+    skipped: []
+  };
+
+  const searches = [];
+
+  for (const [type, searchFn] of Object.entries(SEARCH_FUNCTIONS)) {
+    if (excludeSources.includes(type)) {
+      results.skipped.push(type);
+      continue;
+    }
+    searches.push({ type, searchFn });
+  }
+
+  const searchResults = await Promise.allSettled(
+    searches.map(async ({ type, searchFn }) => {
+      const data = await searchFn(query, limitPerSource);
+      return { type, data };
+    })
+  );
+
+  for (let i = 0; i < searchResults.length; i++) {
+    const result = searchResults[i];
+    const { type } = searches[i];
+
+    if (result.status === 'fulfilled' && result.value.data?.length > 0) {
+      results.successful[type] = result.value.data;
+    } else if (result.status === 'rejected') {
+      results.failed[type] = result.reason.message;
+    }
+    // If fulfilled with empty array, just don't include it
   }
 
   return results;
@@ -110,4 +176,12 @@ export function getSourceConfig(sourceType) {
     color: '#666666',
     icon: null
   };
+}
+
+/**
+ * Get list of searchable sources
+ * @returns {Array<string>} Source type keys
+ */
+export function getSearchableSources() {
+  return Object.keys(SEARCH_FUNCTIONS);
 }
