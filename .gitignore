@@ -1,5 +1,8 @@
 # Local Netlify folder
 .netlify
 
+# Claude Code
+.claude
+
 # Chainlink issue tracker
 .chainlink
