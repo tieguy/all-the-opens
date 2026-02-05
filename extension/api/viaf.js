@@ -9,57 +9,62 @@ const VIAF_API = 'https://viaf.org/viaf';
  * @returns {Promise<Object>} Authority record data
  */
 export async function fetchRecord(viafId) {
-  const response = await fetch(`${VIAF_API}/${viafId}/viaf.json`);
+  try {
+    const response = await fetch(`${VIAF_API}/${viafId}`, {
+      headers: { 'Accept': 'application/json' }
+    });
 
-  if (!response.ok) {
-    if (response.status === 404) {
+    console.log('VIAF response status:', response.status);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`VIAF API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('VIAF data keys:', Object.keys(data));
+
+    const cluster = data['ns1:VIAFCluster'];
+
+    if (!cluster) {
+      console.log('VIAF: No cluster found in response');
       return null;
     }
-    throw new Error(`VIAF API error: ${response.status}`);
-  }
 
-  const data = await response.json();
-
-  // Extract preferred name from mainHeadings
-  let title = viafId;
-  if (data.mainHeadings?.data) {
-    const headings = Array.isArray(data.mainHeadings.data)
-      ? data.mainHeadings.data
-      : [data.mainHeadings.data];
-    if (headings.length > 0) {
-      title = headings[0].text || headings[0];
-    }
-  }
-
-  // Extract source links
-  const sources = [];
-  if (data.sources?.source) {
-    const sourceList = Array.isArray(data.sources.source)
-      ? data.sources.source
-      : [data.sources.source];
-    for (const src of sourceList) {
-      if (src['@nsid']) {
-        sources.push({
-          code: src['#text'] || src,
-          id: src['@nsid']
-        });
+    // Extract preferred name from mainHeadings
+    let title = viafId;
+    const mainHeadings = cluster['ns1:mainHeadings']?.['ns1:data'];
+    if (mainHeadings) {
+      const headingsList = Array.isArray(mainHeadings) ? mainHeadings : [mainHeadings];
+      if (headingsList.length > 0) {
+        title = headingsList[0]['ns1:text'] || title;
       }
     }
-  }
 
-  return {
-    source: 'viaf',
-    type: data.nameType || 'authority',
-    id: viafId,
-    title: title,
-    description: `Authority record from ${sources.length} national libraries`,
-    url: `${VIAF_API}/${viafId}`,
-    thumbnail: null,
-    metadata: {
-      nameType: data.nameType,
-      sources: sources.slice(0, 5),
-      birthDate: data.birthDate,
-      deathDate: data.deathDate
-    }
-  };
+    // Extract source count
+    const sources = cluster['ns1:sources']?.['ns1:source'];
+    const sourceCount = Array.isArray(sources) ? sources.length : (sources ? 1 : 0);
+
+    const nameType = cluster['ns1:nameType'] || 'authority';
+
+    return {
+      source: 'viaf',
+      type: nameType.toLowerCase(),
+      id: viafId,
+      title: title,
+      description: `${nameType} record linked to ${sourceCount} national libraries`,
+      url: `${VIAF_API}/${viafId}`,
+      thumbnail: null,
+      metadata: {
+        nameType: nameType,
+        sourceCount: sourceCount,
+        nationality: cluster['ns1:nationalityOfEntity']?.['ns1:data']?.['ns1:text']
+      }
+    };
+  } catch (error) {
+    console.error('VIAF fetch error:', error);
+    throw error;
+  }
 }

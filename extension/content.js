@@ -126,7 +126,7 @@ async function notifyBackgroundScript() {
   console.log('Jenifesto: Sending page data to background:', pageData);
 
   try {
-    const response = await browser.runtime.sendMessage(pageData);
+    const response = await chrome.runtime.sendMessage(pageData);
     console.log('Jenifesto: Background acknowledged:', response);
   } catch (error) {
     console.error('Jenifesto: Failed to send message:', error);
@@ -151,3 +151,23 @@ const observer = new MutationObserver(() => {
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
+
+// Listen for requests from background script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'GET_PAGE_INFO') {
+    if (!isArticlePage()) {
+      sendResponse(null);
+      return;
+    }
+
+    getWikidataQid().then(qid => {
+      sendResponse({
+        type: 'WIKIPEDIA_PAGE_LOADED',
+        title: getArticleTitle(),
+        url: window.location.href,
+        qid: qid
+      });
+    });
+    return true; // async response
+  }
+});

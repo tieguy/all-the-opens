@@ -1,5 +1,5 @@
 // Cache Module
-// Handles caching with TTL (Time To Live) using browser.storage.local
+// Handles caching with TTL (Time To Live) using chrome.storage.local
 
 const CACHE_PREFIX = 'cache_';
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
@@ -13,7 +13,7 @@ export async function getCached(key) {
   const cacheKey = CACHE_PREFIX + key;
 
   try {
-    const result = await browser.storage.local.get(cacheKey);
+    const result = await chrome.storage.local.get(cacheKey);
     const cached = result[cacheKey];
 
     if (!cached) {
@@ -23,7 +23,7 @@ export async function getCached(key) {
     // Check if expired
     if (cached.expiry && Date.now() > cached.expiry) {
       // Clean up expired entry
-      await browser.storage.local.remove(cacheKey);
+      await chrome.storage.local.remove(cacheKey);
       return null;
     }
 
@@ -44,7 +44,7 @@ export async function setCache(key, value, ttl = DEFAULT_TTL) {
   const cacheKey = CACHE_PREFIX + key;
 
   try {
-    await browser.storage.local.set({
+    await chrome.storage.local.set({
       [cacheKey]: {
         value: value,
         expiry: Date.now() + ttl,
@@ -63,7 +63,7 @@ export async function setCache(key, value, ttl = DEFAULT_TTL) {
 export async function removeCache(key) {
   const cacheKey = CACHE_PREFIX + key;
   try {
-    await browser.storage.local.remove(cacheKey);
+    await chrome.storage.local.remove(cacheKey);
   } catch (error) {
     console.error('Cache remove error:', error);
   }
@@ -74,10 +74,10 @@ export async function removeCache(key) {
  */
 export async function clearCache() {
   try {
-    const all = await browser.storage.local.get(null);
+    const all = await chrome.storage.local.get(null);
     const cacheKeys = Object.keys(all).filter(k => k.startsWith(CACHE_PREFIX));
     if (cacheKeys.length > 0) {
-      await browser.storage.local.remove(cacheKeys);
+      await chrome.storage.local.remove(cacheKeys);
     }
   } catch (error) {
     console.error('Cache clear error:', error);
@@ -90,7 +90,7 @@ export async function clearCache() {
  */
 export async function getCacheStats() {
   try {
-    const all = await browser.storage.local.get(null);
+    const all = await chrome.storage.local.get(null);
     const cacheEntries = Object.entries(all).filter(([k]) => k.startsWith(CACHE_PREFIX));
 
     let validCount = 0;

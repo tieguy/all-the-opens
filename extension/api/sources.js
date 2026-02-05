@@ -44,7 +44,7 @@ export const SOURCE_CONFIG = {
   viaf: {
     name: 'VIAF',
     color: '#8b6b4e',
-    icon: 'https://viaf.org/viaf/images/viaf.ico'
+    icon: null  // VIAF changed their site, old icon URL no longer works
   },
   gbif: {
     name: 'GBIF',

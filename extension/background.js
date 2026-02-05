@@ -20,7 +20,7 @@ let currentTier2Results = null;
 let currentTier3Results = null;
 
 // Listen for messages
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background received:', message.type);
 
   switch (message.type) {
@@ -29,6 +29,13 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     case 'GET_CURRENT_PAGE':
+      // If we don't have current page, query the active tab's content script
+      if (!currentPage) {
+        queryActiveTabForPage().then(page => {
+          sendResponse({ page });
+        });
+        return true;
+      }
       sendResponse({ page: currentPage });
       return;
 
@@ -74,6 +81,43 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 /**
+ * Query the active tab's content script for page info
+ */
+async function queryActiveTabForPage() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !tab.url?.includes('wikipedia.org/wiki/')) {
+      return null;
+    }
+
+    try {
+      const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_INFO' });
+      if (response) {
+        await handlePageLoaded(response);
+        return currentPage;
+      }
+    } catch (e) {
+      // Content script not loaded - inject it
+      console.log('Injecting content script into tab');
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['content.js']
+      });
+      // Wait a moment for script to initialize, then query again
+      await new Promise(r => setTimeout(r, 100));
+      const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_INFO' });
+      if (response) {
+        await handlePageLoaded(response);
+        return currentPage;
+      }
+    }
+  } catch (error) {
+    console.log('Could not query active tab:', error.message);
+  }
+  return null;
+}
+
+/**
  * Handle page loaded message from content script
  */
 async function handlePageLoaded(message) {
@@ -88,7 +132,7 @@ async function handlePageLoaded(message) {
   currentTier2Results = null;
   currentTier3Results = null;
 
-  await browser.storage.local.set({ currentPage });
+  await chrome.storage.local.set({ currentPage });
   broadcastMessage({ type: 'PAGE_UPDATED', page: currentPage });
 
   if (currentPage.qid) {
@@ -170,7 +214,9 @@ async function fetchTier2Results(qid, identifiers) {
   }
 
   console.log('Tier 2 cache miss, querying sources:', qid);
+  console.log('Tier 2 identifiers:', JSON.stringify(identifiers, null, 2));
   const results = await querySourcesByIdentifiers(identifiers);
+  console.log('Tier 2 results:', JSON.stringify(results, null, 2));
 
   for (const [type, data] of Object.entries(results.successful)) {
     data.sourceConfig = getSourceConfig(type);
@@ -248,17 +294,28 @@ function computeDataQualityIssues() {
  * Broadcast message to sidebar
  */
 function broadcastMessage(message) {
-  browser.runtime.sendMessage(message).catch(() => {});
+  chrome.runtime.sendMessage(message).catch(() => {});
 }
 
 // Restore state on startup
-browser.storage.local.get('currentPage').then(result => {
+chrome.storage.local.get('currentPage').then(result => {
   if (result.currentPage) {
     currentPage = result.currentPage;
     console.log('Restored current page:', currentPage.title);
   }
 });
 
-browser.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener((details) => {
   console.log('Jenifesto installed:', details.reason);
+  // Clear cache on update to pick up API changes
+  if (details.reason === 'update') {
+    chrome.storage.local.clear().then(() => {
+      console.log('Cache cleared on update');
+    });
+  }
+});
+
+// Open side panel when extension icon is clicked
+chrome.action.onClicked.addListener((tab) => {
+  chrome.sidePanel.open({ tabId: tab.id });
 });

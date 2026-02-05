@@ -3,7 +3,6 @@
 console.log('Jenifesto sidebar panel loaded');
 
 // DOM elements
-const pageInfoEl = document.getElementById('page-info');
 const wikidataSectionEl = document.getElementById('wikidata-section');
 const entityHeaderEl = document.getElementById('entity-header');
 const entityDescriptionEl = document.getElementById('entity-description');
@@ -83,19 +82,15 @@ function updatePageInfo(page) {
   tier3Loaded = false;
   dataQualityIssues = [];
 
+  hideAllSections();
+
   if (!page) {
-    pageInfoEl.innerHTML = '<p class="placeholder">Navigate to a Wikipedia article to begin exploring.</p>';
-    hideAllSections();
     return;
   }
 
-  pageInfoEl.innerHTML = `<div class="page-title">${escapeHtml(page.title)}</div>`;
-
   if (page.qid) {
-    hideAllSections();
     showLoading('Loading Wikidata...');
   } else {
-    hideAllSections();
     noWikidataEl.classList.remove('hidden');
   }
 
@@ -340,7 +335,7 @@ async function performTier3Search() {
   searchMoreBtn.disabled = true;
 
   try {
-    const response = await browser.runtime.sendMessage({
+    const response = await chrome.runtime.sendMessage({
       type: 'SEARCH_TIER3',
       query: currentPage.title
     });
@@ -371,7 +366,7 @@ document.addEventListener('click', async (e) => {
       // Note: On retry, we re-fetch all sources (not just the failed one).
       // This refreshes all data and ensures consistency across the UI.
       if (tier === '2' && currentEntity) {
-        const response = await browser.runtime.sendMessage({
+        const response = await chrome.runtime.sendMessage({
           type: 'GET_TIER2_RESULTS',
           identifiers: currentEntity.identifiers
         });
@@ -379,7 +374,7 @@ document.addEventListener('click', async (e) => {
           displayTier2Results(response.results);
         }
       } else if (tier === '3' && currentPage) {
-        const response = await browser.runtime.sendMessage({
+        const response = await chrome.runtime.sendMessage({
           type: 'SEARCH_TIER3',
           query: currentPage.title
         });
@@ -403,16 +398,16 @@ searchNoWikidataBtn.addEventListener('click', performTier3Search);
 
 async function loadCurrentPage() {
   try {
-    const response = await browser.runtime.sendMessage({ type: 'GET_CURRENT_PAGE' });
+    const response = await chrome.runtime.sendMessage({ type: 'GET_CURRENT_PAGE' });
     updatePageInfo(response.page);
 
     if (response.page?.qid) {
-      const wikidataResponse = await browser.runtime.sendMessage({ type: 'GET_WIKIDATA' });
+      const wikidataResponse = await chrome.runtime.sendMessage({ type: 'GET_WIKIDATA' });
       if (wikidataResponse.data) {
         displayWikidataEntity(wikidataResponse.data);
 
         showLoading('Loading related sources...');
-        const tier2Response = await browser.runtime.sendMessage({
+        const tier2Response = await chrome.runtime.sendMessage({
           type: 'GET_TIER2_RESULTS',
           identifiers: wikidataResponse.data.identifiers
         });
@@ -424,7 +419,7 @@ async function loadCurrentPage() {
       }
     }
 
-    const issuesResponse = await browser.runtime.sendMessage({ type: 'GET_DATA_QUALITY_ISSUES' });
+    const issuesResponse = await chrome.runtime.sendMessage({ type: 'GET_DATA_QUALITY_ISSUES' });
     if (issuesResponse.issues?.length > 0) {
       displayDataQualityIssues(issuesResponse.issues);
     }
@@ -434,7 +429,7 @@ async function loadCurrentPage() {
   }
 }
 
-browser.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message) => {
   console.log('Sidebar received:', message.type);
 
   switch (message.type) {
