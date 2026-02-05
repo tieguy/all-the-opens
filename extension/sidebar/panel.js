@@ -15,6 +15,8 @@ const relatedTopicsSectionEl = document.getElementById('related-topics-section')
 const relatedTopicsListEl = document.getElementById('related-topics-list');
 const searchMoreSectionEl = document.getElementById('search-more-section');
 const searchMoreBtn = document.getElementById('search-more-btn');
+const dataQualitySectionEl = document.getElementById('data-quality-section');
+const dataQualityListEl = document.getElementById('data-quality-list');
 const loadingSectionEl = document.getElementById('loading-section');
 const loadingTextEl = document.getElementById('loading-text');
 const noWikidataEl = document.getElementById('no-wikidata');
@@ -27,14 +29,15 @@ let currentPage = null;
 let currentEntity = null;
 let tier2SourcesLoaded = [];
 let tier3Loaded = false;
+let dataQualityIssues = [];
 
-// Hide all dynamic sections
 function hideAllSections() {
   wikidataSectionEl.classList.add('hidden');
   identifiersSectionEl.classList.add('hidden');
   sameEntitySectionEl.classList.add('hidden');
   relatedTopicsSectionEl.classList.add('hidden');
   searchMoreSectionEl.classList.add('hidden');
+  dataQualitySectionEl.classList.add('hidden');
   loadingSectionEl.classList.add('hidden');
   noWikidataEl.classList.add('hidden');
   errorSectionEl.classList.add('hidden');
@@ -49,6 +52,7 @@ function updatePageInfo(page) {
   currentPage = page;
   tier2SourcesLoaded = [];
   tier3Loaded = false;
+  dataQualityIssues = [];
 
   if (!page) {
     pageInfoEl.innerHTML = '<p class="placeholder">Navigate to a Wikipedia article to begin exploring.</p>';
@@ -120,7 +124,6 @@ function displayTier2Results(results) {
     ).join('');
   }
 
-  // Show search button if there are more sources to search
   if (!tier3Loaded) {
     searchMoreSectionEl.classList.remove('hidden');
   }
@@ -132,14 +135,11 @@ function displayTier3Results(results) {
   tier3Loaded = true;
 
   const successfulSources = Object.entries(results.successful);
-  if (successfulSources.length === 0) {
-    return;
-  }
+  if (successfulSources.length === 0) return;
 
   relatedTopicsSectionEl.classList.remove('hidden');
   relatedTopicsListEl.innerHTML = successfulSources.map(([sourceType, items]) => {
     const config = items[0]?.sourceConfig || { name: sourceType, icon: null };
-
     return `
       <div class="source-results-group">
         <div class="source-results-header">
@@ -149,6 +149,57 @@ function displayTier3Results(results) {
         </div>
         <div class="source-results-list">
           ${items.map(item => renderResultCard(item, true)).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function displayDataQualityIssues(issues) {
+  // Merge with existing issues, avoiding duplicates
+  for (const issue of issues) {
+    const exists = dataQualityIssues.some(
+      i => i.type === issue.type && i.source === issue.source
+    );
+    if (!exists) {
+      dataQualityIssues.push(issue);
+    }
+  }
+
+  if (dataQualityIssues.length === 0) return;
+
+  dataQualitySectionEl.classList.remove('hidden');
+  dataQualityListEl.innerHTML = dataQualityIssues.map(issue => {
+    const isBroken = issue.type === 'broken_link';
+    const icon = isBroken ? '⚠️' : '💡';
+
+    let matchesHtml = '';
+    if (issue.foundResults && issue.foundResults.length > 0) {
+      matchesHtml = `
+        <div class="quality-issue-matches">
+          <div class="quality-issue-matches-label">Potential matches found:</div>
+          ${issue.foundResults.map(r => `
+            <div class="quality-issue-match">
+              <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${escapeHtml(r.title)}</a>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    return `
+      <div class="quality-issue ${isBroken ? 'quality-issue-broken' : ''}">
+        <div class="quality-issue-header">
+          <span class="quality-issue-icon">${icon}</span>
+          <div class="quality-issue-content">
+            <div class="quality-issue-message">${escapeHtml(issue.message)}</div>
+            ${issue.editUrl ? `
+              <a href="${escapeHtml(issue.editUrl)}" target="_blank" rel="noopener" class="quality-issue-action">
+                Edit on Wikidata →
+              </a>
+            ` : ''}
+            ${matchesHtml}
+          </div>
         </div>
       </div>
     `;
@@ -197,13 +248,12 @@ function escapeHtml(text) {
 async function performTier3Search() {
   if (!currentPage) return;
 
-  const query = currentPage.title;
   showLoading('Searching more sources...');
 
   try {
     const response = await browser.runtime.sendMessage({
       type: 'SEARCH_TIER3',
-      query: query
+      query: currentPage.title
     });
 
     if (response.results) {
@@ -217,7 +267,6 @@ async function performTier3Search() {
   }
 }
 
-// Event listeners
 searchMoreBtn.addEventListener('click', performTier3Search);
 searchNoWikidataBtn.addEventListener('click', performTier3Search);
 
@@ -243,6 +292,12 @@ async function loadCurrentPage() {
         displayError(wikidataResponse.error);
       }
     }
+
+    // Get any existing data quality issues
+    const issuesResponse = await browser.runtime.sendMessage({ type: 'GET_DATA_QUALITY_ISSUES' });
+    if (issuesResponse.issues?.length > 0) {
+      displayDataQualityIssues(issuesResponse.issues);
+    }
   } catch (error) {
     console.error('Sidebar error:', error);
     updatePageInfo(null);
@@ -264,6 +319,9 @@ browser.runtime.onMessage.addListener((message) => {
       break;
     case 'TIER2_LOADED':
       displayTier2Results(message.results);
+      break;
+    case 'DATA_QUALITY_ISSUES':
+      displayDataQualityIssues(message.issues);
       break;
     case 'LOAD_ERROR':
       displayError(message.error);
