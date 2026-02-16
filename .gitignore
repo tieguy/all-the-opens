@@ -6,3 +6,6 @@
 
 # Chainlink issue tracker
 .chainlink
+
+# Track chainlink issue database
+!.chainlink/issues.db
